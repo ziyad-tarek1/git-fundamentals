@@ -97,7 +97,138 @@ git checkout HEAD~ foo.c
 الأمر ده هيرجع الملف `foo.c` من الكوميت اللي قبله (`HEAD~`) ويحطه في الـ **working directory** ويعمله **stage**، لكن الفرع نفسه مش هيتغير.  
 
 ![image](https://github.com/user-attachments/assets/e8a387d9-8aeb-49cb-83f1-8b225ad4d79c)
- 
+
+---
+### **التنقل بين الفروع باستخدام Checkout**  
+لو استخدمت `git checkout` بدون تحديد اسم ملف، وكان المرجع فرع محلي، **HEAD** هيتحرك للفرع ده، وهيتم تحديث **stage** و **working directory** عشان يطابقوا محتوى الكوميت الجديد.  
+
+- أي ملف موجود في الكوميت الجديد هيتنسخ للـ **working directory**  
+- أي ملف كان موجود في الكوميت القديم ومش موجود في الجديد هيتحذف  
+- أي ملف مش موجود في أي من الكوميتين هيتم تجاهله  
+
+![image](https://github.com/user-attachments/assets/2bb16ebd-2851-4bdd-85e3-c5b39552ba1d)
+
+
+---
+
+### **Detached HEAD - العمل خارج الفروع العادية**  
+لو استخدمت `git checkout` بدون تحديد اسم ملف، وكان المرجع **مش فرع محلي** (زي **tag**، **remote branch**، **SHA-1 ID**، أو حاجة زي `main~3`)، هتدخل في **Detached HEAD**.  
+
+ده مفيد لو عايز تتنقل في الـ **history**. مثلا، لو عايز ترجع لإصدار قديم من جيت (`v1.6.6.1`):  
+```bash
+git checkout v1.6.6.1
+```
+بعد ما تخلص، تقدر ترجع لفرع تاني عادي:  
+```bash
+git checkout main
+```
+لكن لو عملت **commit** أثناء وجودك في **Detached HEAD**، الكوميت هيبقى موجود لكن مش مربوط بأي فرع.  
+
+![image](https://github.com/user-attachments/assets/58534d26-0edf-4c0b-8939-3107e27e83a3)
+
+
+---
+
+### **Committing with a Detached HEAD - الكوميت بدون فرع**  
+في وضع **Detached HEAD**، لو عملت `git commit`، الكوميت هيتم إنشاؤه عادي لكن مش هيتم تحديث أي فرع باسم محدد، وده معناه إن الكوميت ممكن يضيع لو انتقلت لحاجة تانية.  
+
+![image](https://github.com/user-attachments/assets/52ba0c87-6926-414a-af11-59207ea82fd3)
+
+
+لو عايز تحفظ الحالة دي، تقدر تعمل فرع جديد باستخدام:  
+```bash
+git checkout -b new-branch
+```
+كده الكوميت هيبقى محفوظ ومش هيضيع.  
+
+![image](https://github.com/user-attachments/assets/c56a9a14-6a35-4396-bf84-70860b9a916e)
+
+![image](https://github.com/user-attachments/assets/d6c1fde6-6480-4086-9e17-dc5f8ee386eb)
+
+
+---
+
+### **Reset - إعادة تعيين الفرع**  
+الأمر `git reset` بيستخدم عشان تحرك الفرع الحالي لكوميت تاني، وكمان ممكن يحدث **stage** و **working directory** حسب الحاجة.  
+
+#### **أوضاع `git reset`**  
+- لو كتبت `git reset <commit>` بدون أسماء ملفات، الفرع الحالي هيتحرك للكوميت ده، وهيتم تحديث **stage** عشان يطابقه.  
+- لو أضفت `--hard`، **working directory** كمان هيتحدث وهيتم حذف أي تعديلات غير محفوظه.  
+- لو أضفت `--soft`، **لا الـ stage ولا الـ working directory** هيتغيروا، بس الفرع هيتحرك للكوميت الجديد.  
+
+![image](https://github.com/user-attachments/assets/f4398112-c775-4e7e-ac8e-cc6378dc6256)
+
+
+لو ما حددتش كوميت، `git reset` بيشتغل على `HEAD`، وفي الحالة دي الفرع مش هيتحرك، لكن **stage (وكمان الـ working directory لو استخدمت --hard) هيرجعوا لحالة آخر كوميت**.  
+
+![image](https://github.com/user-attachments/assets/4d86cc70-37a8-442a-bd3c-8c04cafddb69)
+
+#### **إعادة تعيين ملفات معينة**  
+لو استخدمت `git reset` مع **اسم ملف**، هيرجع الملف ده بس للـ **stage**، لكن مش هيلمس **working directory**. (وده نفس تأثير `git checkout` بس مع الفرق إن **working directory مش بيتأثر**).  
+
+![image](https://github.com/user-attachments/assets/fd3a618b-d9b5-4681-b301-e3c791f8ae93)
+
+---
+### **Merge - دمج الفروع**  
+`git merge` بيستخدم لدمج التعديلات من فرع آخر في الفرع الحالي، وبيتم إنشاء **كوميت جديد** يدمج التعديلات دي.  
+
+#### **أنواع الـ Merge**  
+1. **Fast-Forward Merge**:  
+   - لو كان الفرع الآخر **امتداد مباشر** للفرع الحالي، الجيت بس بينقل المؤشر للفرع الجديد بدون إنشاء كوميت جديد.  
+   - مثال:  
+     ```bash
+     git checkout main
+     git merge feature-branch
+     ```
+![image](https://github.com/user-attachments/assets/f84f3890-ad09-4c06-b093-c2cd42c6af3a)
+
+2. **Recursive Merge (ثلاثي الأطراف)**:  
+   - لو الفرعين حصل عليهم تعديلات منفصلة، الجيت بيحدد **السلف المشترك** ويستخدمه كمرجع للدمج.  
+   - بعد حل أي تعارضات، بيتم **إنشاء كوميت جديد** يحتوي على التعديلات المدمجة.  
+![image](https://github.com/user-attachments/assets/363b8b57-1b13-4a1a-8c63-cc146f518c91)
+
+---
+
+### **Cherry-Pick - اختيار كوميت معين**  
+`git cherry-pick` بيستخدم لنسخ **كوميت معين** من فرع آخر إلى الفرع الحالي، مع الحفاظ على نفس الرسالة والتعديلات.  
+
+#### **مثال: نسخ كوميت معين للفرع الحالي**  
+```bash
+git checkout main
+git cherry-pick <commit-hash>
+```
+- ده مفيد لو عايز تاخد **ميزة أو إصلاح** من فرع تاني بدون دمج كامل.  
+
+![image](https://github.com/user-attachments/assets/31152a22-1201-4362-b952-d152c6c4a2fc)
+
+---
+
+### **Rebase - إعادة ترتيب الكوميتات**  
+بديل للـ `merge`، لكنه بيعيد تشغيل كل الكوميتات من الفرع الحالي فوق فرع آخر، **لإبقاء التاريخ خطي** بدون تشعبات.  
+
+#### **مثال: إعادة تشغيل الكوميتات من `feature-branch` على `main`**  
+```bash
+git checkout feature-branch
+git rebase main
+```
+- ده بيجعل كل تعديلات `feature-branch` تظهر **وكأنها تمت بعد آخر تحديث للـ main**.  
+![image](https://github.com/user-attachments/assets/714cea3d-03ef-48ab-9802-56f77b405de9)
+
+#### **Rebase --onto**  
+لو عايز تنقل مجموعة معينة من الكوميتات فقط، استخدم `--onto`:  
+```bash
+git rebase --onto main 169a6 feature-branch
+```
+- هنا بيتم **نقل الكوميتات من بعد 169a6** إلى `main`.  
+![image](https://github.com/user-attachments/assets/014cc6d3-3e51-4456-96a6-5a5e2cf6b64c)
+
+#### **Interactive Rebase - تعديل الكوميتات أثناء إعادة ترتيبها**  
+```bash
+git rebase -i HEAD~3
+```
+- يسمح لك بـ **حذف، إعادة ترتيب، دمج، أو تعديل** الكوميتات أثناء الـ rebase.
+
+---
 ---
 
 ## Git Branches - إدارة الفروع
